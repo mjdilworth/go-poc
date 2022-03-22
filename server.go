@@ -9,6 +9,8 @@ import (
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/mjdilworth/go-poc/handlers"
 )
 
 type Server struct {
@@ -37,28 +39,15 @@ func NewServer(listenAddr string) (*Server, error) {
 
 }
 
+//Routing
 func newAPI() *http.ServeMux {
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		if req.URL.Path != "/" {
-			http.NotFound(w, req)
-			return
-		}
-		fmt.Fprintf(w, "Proudly served with Go and HTTPS!\n")
-	})
-	mux.HandleFunc("/secret/", func(w http.ResponseWriter, req *http.Request) {
-		user, pass, ok := req.BasicAuth()
-		if ok && verifyUserPass(user, pass) {
-			fmt.Fprintf(w, "You get to see the secret\n")
-		} else {
-			// i should redirect to login page
-			w.Header().Set("WWW-Authenticate", `Basic realm="api"`)
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		}
-	})
 
-	// register more routes over here...
+	mux.HandleFunc("/health/", handlers.Health)
+	mux.HandleFunc("/", handlers.Root)
+	mux.HandleFunc("/secret/", handlers.Auth)
+
 	return mux
 }
 
