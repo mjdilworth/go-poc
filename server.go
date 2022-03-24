@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/mjdilworth/go-poc/handlers"
@@ -15,6 +17,22 @@ import (
 
 type Server struct {
 	*http.Server
+}
+
+func incrementAddr(s string) (newStr string) {
+	retStr := ""
+	s = strings.Trim(s, ":")
+	//trim, conert input to int, then add one then conver to string
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		// handle error
+		fmt.Println(err)
+		os.Exit(2)
+	}
+	i++
+	retStr = strconv.Itoa(i)
+	retStr = ":" + retStr
+	return retStr
 }
 
 // NewServer creates and configures a server serving all application routes.
@@ -67,7 +85,7 @@ func (srv *Server) Start() {
 
 // Start runs ListenAndServeTLS on the http.Server with graceful shutdown
 func (srv *Server) StartTLS(certFile, keyFile string) {
-	fmt.Println("Starting server...")
+	fmt.Println("Starting HTTPS server...")
 
 	go func() {
 		if err := srv.ListenAndServeTLS(certFile, keyFile); err != nil && err != http.ErrServerClosed {
@@ -76,7 +94,20 @@ func (srv *Server) StartTLS(certFile, keyFile string) {
 			os.Exit(-1)
 		}
 	}()
-	fmt.Println("Server is ready to handle requests")
+	fmt.Println("HTTPS Server is ready to handle requests")
+
+	/*
+		//increment listenAddr for TLS
+		lstnr := incrementAddr(srv.Addr)
+
+		go func() {
+			srv.Addr = lstnr
+			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				fmt.Printf("HTTP Could not listen on %s\n", srv.Addr)
+				log.Printf("%+v", err)
+			}
+		}()
+	*/
 	srv.gracefulShutdown()
 }
 func (srv *Server) gracefulShutdown() {
